@@ -10,6 +10,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 from replay_buffer import ReplayBuffer
 from velodyne_env import GazeboEnv
+# from multi_agent.velodyne_env_test import GazeboEnv
 
 
 def evaluate(network, epoch, eval_episodes=10):
@@ -217,7 +218,8 @@ class TD3(object):
 
 
 # Set the parameters for the implementation
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # cuda or cpu
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # cuda or cpu
+device = torch.device("cpu")  # cuda or cpu
 seed = 0  # Random seed number
 eval_freq = 5e3  # After how many steps to perform the evaluation
 max_ep = 500  # maximum number of steps per episode
@@ -237,7 +239,7 @@ policy_freq = 2  # Frequency of Actor network updates
 buffer_size = 1e6  # Maximum size of the buffer
 file_name = "TD3_velodyne"  # name of the file to store the policy
 save_model = True  # Weather to save the model or not
-load_model = False  # Weather to load a stored model
+load_model = True  # Weather to load a stored model
 random_near_obstacle = True  # To take random actions near obstacles or not
 
 # Create the network storage folders
@@ -248,8 +250,9 @@ if save_model and not os.path.exists("./pytorch_models"):
 
 # Create the training environment
 environment_dim = 20
+r1 = "r1"
 robot_dim = 4
-env = GazeboEnv("multi_robot_scenario.launch", environment_dim)
+env = GazeboEnv("multi_robot_scenario.launch", environment_dim )
 time.sleep(5)
 torch.manual_seed(seed)
 np.random.seed(seed)

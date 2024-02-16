@@ -1,0 +1,49 @@
+<launch>
+  <!-- 第一个机器人的参数 -->
+  <arg name="robot_name1" default="r1" />
+  <arg name="robot_position1" default="-x -1.0 -y 5.0 -z 0.01" />
+
+  <!-- 第二个机器人的参数 -->
+  <arg name="robot_name2" default="r2" />
+  <arg name="robot_position2" default="-x 2.0 -y 5.0 -z 0.01" />
+
+  <param name="/$(arg robot_name1)/laser_topic" value="/$(arg robot_name1)/velodyne_points" />
+  <param name="/$(arg robot_name2)/laser_topic" value="/$(arg robot_name2)/velodyne_points" />
+
+
+  <!-- 第一个机器人 -->
+  <group ns="$(arg robot_name1)">
+    <!-- 加载第一个机器人的 URDF 到 ROS 参数服务器 -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find multi_robot_scenario)/xacro/p3dx/pioneer3dx.xacro'" />
+    <!-- <param name="robot_description" command="$(find xacro)/xacro '$(find multi_robot_scenario)/xacro/p3dx/pioneer3dx.xacro' laser_topic:='/$(arg robot_name1)/velodyne_points'" /> -->
+
+
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model $(arg robot_name1) -param robot_description $(arg robot_position1) "/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0"/>
+    </node>
+  
+    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0"/>
+    </node>
+  </group>
+
+  <!-- 第二个机器人 -->
+  <group ns="$(arg robot_name2)">
+    <!-- 加载第二个机器人的 URDF 到 ROS 参数服务器 -->
+    <param name="robot_description" command="$(find xacro)/xacro '$(find multi_robot_scenario)/xacro/p3dx/pioneer3dx.xacro'" />
+    <!-- <param name="robot_description" command="$(find xacro)/xacro '$(find multi_robot_scenario)/xacro/p3dx/pioneer3dx.xacro' laser_topic:='/$(arg robot_name2)/velodyne_points'" /> -->
+
+
+    <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen" args="-urdf -model $(arg robot_name2) -param robot_description $(arg robot_position2) "/>
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0"/>
+    </node>
+  
+    <node pkg="joint_state_publisher" type="joint_state_publisher" name="joint_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0"/>
+    </node>
+  </group>
+</launch>

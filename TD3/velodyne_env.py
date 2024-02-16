@@ -80,6 +80,7 @@ class GazeboEnv:
 
         self.set_self_state = ModelState()
         self.set_self_state.model_name = "r1"
+        # self.set_self_state.model_name = "p3dx"
         self.set_self_state.pose.position.x = 0.0
         self.set_self_state.pose.position.y = 0.0
         self.set_self_state.pose.position.z = 0.0
@@ -95,25 +96,26 @@ class GazeboEnv:
             )
         self.gaps[-1][-1] += 0.03
 
-        port = "11311"
-        subprocess.Popen(["roscore", "-p", port])
+        # port = "11311"
+        # subprocess.Popen(["roscore", "-p", port])
 
         print("Roscore launched!")
 
-        # Launch the simulation with the given launchfile name
+        # # Launch the simulation with the given launchfile name
         rospy.init_node("gym", anonymous=True)
-        if launchfile.startswith("/"):
-            fullpath = launchfile
-        else:
-            fullpath = os.path.join(os.path.dirname(__file__), "assets", launchfile)
-        if not path.exists(fullpath):
-            raise IOError("File " + fullpath + " does not exist")
+        # if launchfile.startswith("/"):
+        #     fullpath = launchfile
+        # else:
+        #     fullpath = os.path.join(os.path.dirname(__file__), "assets", launchfile)
+        # if not path.exists(fullpath):
+        #     raise IOError("File " + fullpath + " does not exist")
 
-        subprocess.Popen(["roslaunch", "-p", port, fullpath])
-        print("Gazebo launched!")
+        # subprocess.Popen(["roslaunch", "-p", port, fullpath])
+        # print("Gazebo launched!")
 
         # Set up the ROS publishers and subscribers
         self.vel_pub = rospy.Publisher("/r1/cmd_vel", Twist, queue_size=1)
+        # self.vel_pub = rospy.Publisher("/p3dx/cmd_vel", Twist, queue_size=1)
         self.set_state = rospy.Publisher(
             "gazebo/set_model_state", ModelState, queue_size=10
         )
@@ -128,6 +130,7 @@ class GazeboEnv:
         )
         self.odom = rospy.Subscriber(
             "/r1/odom", Odometry, self.odom_callback, queue_size=1
+            # "/p3dx/odom", Odometry, self.odom_callback, queue_size=1
         )
 
     # Read velodyne pointcloud and turn it into distance data, then select the minimum value for each angle
@@ -231,7 +234,7 @@ class GazeboEnv:
         reward = self.get_reward(target, collision, action, min_laser)
         return state, reward, done, target
 
-    def reset(self):
+    def reset(self, start_x=None, start_y=None, start_angle=None):
 
         # Resets the state of the environment and returns an initial observation.
         rospy.wait_for_service("/gazebo/reset_world")
@@ -241,17 +244,33 @@ class GazeboEnv:
         except rospy.ServiceException as e:
             print("/gazebo/reset_simulation service call failed")
 
-        angle = np.random.uniform(-np.pi, np.pi)
+        # angle = np.random.uniform(-np.pi, np.pi)
+        # quaternion = Quaternion.from_euler(0.0, 0.0, angle)
+        # object_state = self.set_self_state
+
+        # 自定义修改
+        angle = start_angle if start_angle is not None else np.random.uniform(-np.pi, np.pi)
         quaternion = Quaternion.from_euler(0.0, 0.0, angle)
         object_state = self.set_self_state
 
-        x = 0
-        y = 0
-        position_ok = False
-        while not position_ok:
-            x = np.random.uniform(-4.5, 4.5)
-            y = np.random.uniform(-4.5, 4.5)
-            position_ok = check_pos(x, y)
+        # Set position
+        if start_x is not None and start_y is not None:
+            x = start_x
+            y = start_y
+        else:
+            position_ok = False
+            while not position_ok:
+                x = np.random.uniform(-4.5, 4.5)
+                y = np.random.uniform(-4.5, 4.5)
+                position_ok = check_pos(x, y)
+        # x = 0
+        # y = 0
+        # position_ok = False
+        # while not position_ok:
+        #     x = np.random.uniform(-4.5, 4.5)
+        #     y = np.random.uniform(-4.5, 4.5)
+        #     position_ok = check_pos(x, y)
+
         object_state.pose.position.x = x
         object_state.pose.position.y = y
         # object_state.pose.position.z = 0.
@@ -317,19 +336,24 @@ class GazeboEnv:
         state = np.append(laser_state, robot_state)
         return state
 
-    def change_goal(self):
-        # Place a new goal and check if its location is not on one of the obstacles
-        if self.upper < 10:
-            self.upper += 0.004
-        if self.lower > -10:
-            self.lower -= 0.004
+    def change_goal(self, goal_x=None, goal_y=None):
+        if goal_x is not None and goal_y is not None:
+            self.goal_x = goal_x
+            self.goal_y = goal_y
+        else:
+             # Place a new goal and check if its location is not on one of the obstacles
+            if self.upper < 10:
+                self.upper += 0.004
+            if self.lower > -10:
+                self.lower -= 0.004
 
-        goal_ok = False
+            goal_ok = False
 
-        while not goal_ok:
-            self.goal_x = self.odom_x + random.uniform(self.upper, self.lower)
-            self.goal_y = self.odom_y + random.uniform(self.upper, self.lower)
-            goal_ok = check_pos(self.goal_x, self.goal_y)
+            while not goal_ok:
+                self.goal_x = self.odom_x + random.uniform(self.upper, self.lower)
+                self.goal_y = self.odom_y + random.uniform(self.upper, self.lower)
+                goal_ok = check_pos(self.goal_x, self.goal_y)
+       
 
     def random_box(self):
         # Randomly change the location of the boxes in the environment on each reset to randomize the training

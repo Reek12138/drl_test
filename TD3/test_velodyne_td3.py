@@ -7,6 +7,12 @@ import torch.nn.functional as F
 
 from velodyne_env import GazeboEnv
 
+custom_start_x = 1.0
+custom_start_y = 1.0
+custom_start_angle = 0.0  # 可选，单位为弧度
+custom_goal_x = -8.0
+custom_goal_y = 4.0
+
 
 class Actor(nn.Module):
     def __init__(self, state_dim, action_dim):
@@ -43,7 +49,8 @@ class TD3(object):
 
 
 # Set the parameters for the implementation
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # cuda or cpu
+# device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # cuda or cpu
+device = torch.device( "cpu")  # cuda or cpu
 seed = 0  # Random seed number
 max_ep = 500  # maximum number of steps per episode
 file_name = "TD3_velodyne"  # name of the file to load the policy from
@@ -81,7 +88,13 @@ while True:
 
     # On termination of episode
     if done:
-        state = env.reset()
+        # state = env.reset()
+
+        # 使用自定义的起始点重置环境
+        state = env.reset(custom_start_x, custom_start_y, custom_start_angle)
+        # 设置自定义的目标点
+        env.change_goal(custom_goal_x, custom_goal_y)
+
         done = False
         episode_timesteps = 0
     else:
