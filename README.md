@@ -95,3 +95,5 @@ Rviz:
 <p align="center">
     <img width=80% src="https://github.com/reiniscimurs/DRL-robot-navigation/blob/main/velodyne.png">
 </p>
+
+TODO:the part of  multiagent is still idiot
